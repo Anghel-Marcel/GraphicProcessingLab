@@ -1,246 +1,151 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// -------------------- Ground --------------------
+// Window
+const unsigned int SCR_WIDTH = 1000;
+const unsigned int SCR_HEIGHT = 800;
 
-float groundVertices[] = {
+// Camera
+float camX = 0.0f, camY = 8.0f, camZ = 15.0f;
 
-    -5.0f,0.0f,-5.0f,   0.0f,0.0f,
-     5.0f,0.0f,-5.0f,  10.0f,0.0f,
-     5.0f,0.0f, 5.0f,  10.0f,10.0f,
-
-     5.0f,0.0f, 5.0f,  10.0f,10.0f,
-    -5.0f,0.0f, 5.0f,   0.0f,10.0f,
-    -5.0f,0.0f,-5.0f,   0.0f,0.0f
-};
-
-// -------------------- Terrain --------------------
-
-float terrainVertices[] = {
-
-    // Section 1
-    -1.0f,0.0f,-1.5f, 0.0f,0.0f,
-    -0.5f,0.3f,-1.3f, 0.5f,1.0f,
-     0.0f,0.0f,-1.5f, 1.0f,0.0f,
-
-     0.0f,0.0f,-1.5f, 0.0f,0.0f,
-    -0.5f,0.3f,-1.3f, 0.5f,1.0f,
-     0.7f,0.6f,-1.1f, 1.0f,1.0f,
-
-
-     // Section 2
-      0.0f,0.0f,-1.5f, 0.0f,0.0f,
-      0.7f,0.6f,-1.1f, 0.5f,1.0f,
-      1.4f,0.0f,-1.4f, 1.0f,0.0f,
-
-      1.4f,0.0f,-1.4f, 0.0f,0.0f,
-      0.7f,0.6f,-1.1f, 0.5f,1.0f,
-      2.0f,0.9f,-0.9f, 1.0f,1.0f,
-
-
-      // Section 3
-       1.4f,0.0f,-1.4f, 0.0f,0.0f,
-       2.0f,0.9f,-0.9f, 0.5f,1.0f,
-       2.8f,0.0f,-1.3f, 1.0f,0.0f,
-
-       2.8f,0.0f,-1.3f, 0.0f,0.0f,
-       2.0f,0.9f,-0.9f, 0.5f,1.0f,
-       3.6f,1.2f,-0.7f, 1.0f,1.0f,
-
-
-       // Section 4 
-        2.8f,0.0f,-1.3f, 0.0f,0.0f,
-        3.6f,1.2f,-0.7f, 0.5f,1.0f,
-        4.5f,0.0f,-1.2f, 1.0f,0.0f,
-
-        4.5f,0.0f,-1.2f, 0.0f,0.0f,
-        3.6f,1.2f,-0.7f, 0.5f,1.0f,
-        5.0f,1.4f,-0.5f, 1.0f,1.0f
-};
-
-// -------------------- Skybox --------------------
-
-float skyboxVertices[] = {
-
-    // Back wall
-    -10.0f,-1.0f,-10.0f, 0.0f,0.0f,
-     10.0f,-1.0f,-10.0f, 1.0f,0.0f,
-     10.0f,10.0f,-10.0f, 1.0f,1.0f,
-
-     10.0f,10.0f,-10.0f, 1.0f,1.0f,
-    -10.0f,10.0f,-10.0f, 0.0f,1.0f,
-    -10.0f,-1.0f,-10.0f, 0.0f,0.0f,
-
-    // Left wall
-    -10.0f,-1.0f,10.0f, 0.0f,0.0f,
-    -10.0f,-1.0f,-10.0f,1.0f,0.0f,
-    -10.0f,10.0f,-10.0f,1.0f,1.0f,
-
-    -10.0f,10.0f,-10.0f,1.0f,1.0f,
-    -10.0f,10.0f,10.0f, 0.0f,1.0f,
-    -10.0f,-1.0f,10.0f, 0.0f,0.0f,
-
-    // Right wall
-     10.0f,-1.0f,-10.0f,0.0f,0.0f,
-     10.0f,-1.0f,10.0f, 1.0f,0.0f,
-     10.0f,10.0f,10.0f, 1.0f,1.0f,
-
-     10.0f,10.0f,10.0f, 1.0f,1.0f,
-     10.0f,10.0f,-10.0f,0.0f,1.0f,
-     10.0f,-1.0f,-10.0f,0.0f,0.0f,
-
-     // Front wall
-     -10.0f,-1.0f,10.0f,0.0f,0.0f,
-      10.0f,-1.0f,10.0f,1.0f,0.0f,
-      10.0f,10.0f,10.0f,1.0f,1.0f,
-
-      10.0f,10.0f,10.0f,1.0f,1.0f,
-     -10.0f,10.0f,10.0f,0.0f,1.0f,
-     -10.0f,-1.0f,10.0f,0.0f,0.0f
-};
-
-// -------------------- Shaders --------------------
-
+// Shader sources
 const char* vertexShaderSource = R"(
-
 #version 330 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTex;
 
 out vec2 TexCoord;
 
+uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-void main()
-{
-    gl_Position = projection * view * vec4(aPos,1.0);
+void main() {
     TexCoord = aTex;
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
 )";
 
 const char* fragmentShaderSource = R"(
-
 #version 330 core
 out vec4 FragColor;
-
 in vec2 TexCoord;
 
 uniform sampler2D texture1;
 
-void main()
-{
+void main() {
     FragColor = texture(texture1, TexCoord);
 }
 )";
 
-// -------------------- Texture Loader --------------------
+// FULL cube vertices (FIXED)
+float cubeVertices[] = {
+    // positions          // texcoords
+    -0.5f,-0.5f,-0.5f, 0.0f,0.0f,
+     0.5f,-0.5f,-0.5f, 1.0f,0.0f,
+     0.5f, 0.5f,-0.5f, 1.0f,1.0f,
+     0.5f, 0.5f,-0.5f, 1.0f,1.0f,
+    -0.5f, 0.5f,-0.5f, 0.0f,1.0f,
+    -0.5f,-0.5f,-0.5f, 0.0f,0.0f,
 
-unsigned int loadTexture(const char* path)
-{
+    -0.5f,-0.5f, 0.5f, 0.0f,0.0f,
+     0.5f,-0.5f, 0.5f, 1.0f,0.0f,
+     0.5f, 0.5f, 0.5f, 1.0f,1.0f,
+     0.5f, 0.5f, 0.5f, 1.0f,1.0f,
+    -0.5f, 0.5f, 0.5f, 0.0f,1.0f,
+    -0.5f,-0.5f, 0.5f, 0.0f,0.0f,
+
+    -0.5f, 0.5f, 0.5f, 1.0f,0.0f,
+    -0.5f, 0.5f,-0.5f, 1.0f,1.0f,
+    -0.5f,-0.5f,-0.5f, 0.0f,1.0f,
+    -0.5f,-0.5f,-0.5f, 0.0f,1.0f,
+    -0.5f,-0.5f, 0.5f, 0.0f,0.0f,
+    -0.5f, 0.5f, 0.5f, 1.0f,0.0f,
+
+     0.5f, 0.5f, 0.5f, 1.0f,0.0f,
+     0.5f, 0.5f,-0.5f, 1.0f,1.0f,
+     0.5f,-0.5f,-0.5f, 0.0f,1.0f,
+     0.5f,-0.5f,-0.5f, 0.0f,1.0f,
+     0.5f,-0.5f, 0.5f, 0.0f,0.0f,
+     0.5f, 0.5f, 0.5f, 1.0f,0.0f,
+
+    -0.5f, 0.5f,-0.5f, 0.0f,1.0f,
+     0.5f, 0.5f,-0.5f, 1.0f,1.0f,
+     0.5f, 0.5f, 0.5f, 1.0f,0.0f,
+     0.5f, 0.5f, 0.5f, 1.0f,0.0f,
+    -0.5f, 0.5f, 0.5f, 0.0f,0.0f,
+    -0.5f, 0.5f,-0.5f, 0.0f,1.0f,
+
+    -0.5f,-0.5f,-0.5f, 0.0f,1.0f,
+     0.5f,-0.5f,-0.5f, 1.0f,1.0f,
+     0.5f,-0.5f, 0.5f, 1.0f,0.0f,
+     0.5f,-0.5f, 0.5f, 1.0f,0.0f,
+    -0.5f,-0.5f, 0.5f, 0.0f,0.0f,
+    -0.5f,-0.5f,-0.5f, 0.0f,1.0f
+};
+
+// Texture loader
+unsigned int loadTexture(const char* path) {
     unsigned int texture;
     glGenTextures(1, &texture);
+
+    int w, h, nrChannels;
+    unsigned char* data = stbi_load(path, &w, &h, &nrChannels, 0);
+
+    GLenum format = (nrChannels == 3) ? GL_RGB : GL_RGBA;
+
     glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    int width, height, channels;
-    unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
-
-    if (data)
-    {
-        GLenum format = channels == 4 ? GL_RGBA : GL_RGB;
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-        std::cout << "Texture failed: " << path << std::endl;
-
     stbi_image_free(data);
-
     return texture;
 }
 
-// -------------------- MAIN --------------------
-
-int main()
-{
+int main() {
     glfwInit();
-
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Scene Cube", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Street Circuit", NULL, NULL);
     glfwMakeContextCurrent(window);
-
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glEnable(GL_DEPTH_TEST);
-
-    stbi_set_flip_vertically_on_load(true);
+    glClearColor(0.5f, 0.7f, 1.0f, 1.0f); // sky color
 
     // Shaders
-    unsigned int vShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vShader);
+    unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vertexShaderSource, NULL);
+    glCompileShader(vs);
 
-    unsigned int fShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fShader);
+    unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fs);
 
     unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vShader);
-    glAttachShader(shaderProgram, fShader);
+    glAttachShader(shaderProgram, vs);
+    glAttachShader(shaderProgram, fs);
     glLinkProgram(shaderProgram);
 
-    glDeleteShader(vShader);
-    glDeleteShader(fShader);
+    // VAO/VBO
+    unsigned int VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
 
-    // ---------------- VAOs ----------------
-
-    unsigned int groundVAO, groundVBO;
-    glGenVertexArrays(1, &groundVAO);
-    glGenBuffers(1, &groundVBO);
-
-    glBindVertexArray(groundVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, groundVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(groundVertices), groundVertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    unsigned int terrainVAO, terrainVBO;
-    glGenVertexArrays(1, &terrainVAO);
-    glGenBuffers(1, &terrainVBO);
-
-    glBindVertexArray(terrainVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(terrainVertices), terrainVertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    unsigned int skyVAO, skyVBO;
-    glGenVertexArrays(1, &skyVAO);
-    glGenBuffers(1, &skyVBO);
-
-    glBindVertexArray(skyVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -249,53 +154,80 @@ int main()
     glEnableVertexAttribArray(1);
 
     // Textures
+    unsigned int roadTex = loadTexture("textures/road.jpg");
     unsigned int grassTex = loadTexture("textures/grass.jpg");
-    unsigned int skyTex = loadTexture("textures/sky.jpg");
+    unsigned int buildingTex = loadTexture("textures/building.jpg");
 
-
-    // ---------------- Render Loop ----------------
-
-    while (!glfwWindowShouldClose(window))
-    {
-        glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
+    while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
 
-        glm::mat4 view = glm::lookAt(
-            glm::vec3(0.0f, 0.8f, 6.0f),   
-            glm::vec3(0.0f, 0.8f, -5.0f),  
-            glm::vec3(0.0f, 1.0f, 0.0f)    
-        );
-
-        glm::mat4 projection = glm::perspective(
-            glm::radians(45.0f),
-            800.0f / 600.0f,
-            0.1f,
-            100.0f
-        );
+        glm::mat4 view = glm::lookAt(glm::vec3(camX, camY, camZ),
+            glm::vec3(0, 0, 0),
+            glm::vec3(0, 1, 0));
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+            (float)SCR_WIDTH / SCR_HEIGHT,
+            0.1f, 100.0f);
 
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        // SKY
-        glBindTexture(GL_TEXTURE_2D, skyTex);
-        glBindVertexArray(skyVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 24);
+        glBindVertexArray(VAO);
 
-        // GROUND
+        // GRASS
         glBindTexture(GL_TEXTURE_2D, grassTex);
-        glBindVertexArray(groundVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(20, 0.1f, 20));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // TERRAIN
-        glBindTexture(GL_TEXTURE_2D, grassTex);
-        glBindVertexArray(terrainVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 24);
+        // ROAD (fixed)
+        glBindTexture(GL_TEXTURE_2D, roadTex);
+
+        glm::mat4 roads[4] = {
+            glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0,0.05f,5)), glm::vec3(12,0.1f,1)),
+            glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0,0.05f,-5)), glm::vec3(12,0.1f,1)),
+            glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(-5,0.05f,0)), glm::vec3(1,0.1f,12)),
+            glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(5,0.05f,0)), glm::vec3(1,0.1f,12))
+        };
+
+        for (int i = 0; i < 4; i++) {
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(roads[i]));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        // BUILDINGS
+        glBindTexture(GL_TEXTURE_2D, buildingTex);
+        float heights[] = { 2.0f, 3.5f, 2.5f, 4.0f, 3.0f };
+
+        for (int i = 0; i < 5; i++) {
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(-8 + i * 4, heights[i] / 2, 8));
+            model = glm::scale(model, glm::vec3(1.5f, heights[i], 1.5f));
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        // SIMPLE TREES (cube only)
+        for (int i = 0; i < 5; i++) {
+            // trunk
+            glBindTexture(GL_TEXTURE_2D, buildingTex);
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(-8 + i * 4, 0.5f, -8));
+            model = glm::scale(model, glm::vec3(0.3f, 1.0f, 0.3f));
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            // leaves
+            glBindTexture(GL_TEXTURE_2D, grassTex);
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(-8 + i * 4, 1.5f, -8));
+            model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     glfwTerminate();
+    return 0;
 }

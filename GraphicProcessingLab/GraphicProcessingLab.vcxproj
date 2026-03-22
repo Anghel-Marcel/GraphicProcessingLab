@@ -143,8 +143,11 @@
     <ClInclude Include="Dependencies\include\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="textures\building.jpg" />
     <Image Include="textures\grass.jpg" />
+    <Image Include="textures\road.jpg" />
     <Image Include="textures\sky.jpg" />
+    <Image Include="textures\tree.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -49,5 +49,14 @@
     <Image Include="textures\sky.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="textures\building.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="textures\road.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="textures\tree.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
