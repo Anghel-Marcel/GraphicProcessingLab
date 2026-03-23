@@ -72,9 +72,9 @@ void main() {
 }
 )";
 
-// -------------------------------------------------------
-// Cube (pos + UV, no normals needed — lighting uses world-up)
-// -------------------------------------------------------
+// --------
+// Cube 
+// --------
 float cubeVertices[] = {
     -0.5f,-0.5f,-0.5f, 0.0f,0.0f,  0.5f,-0.5f,-0.5f, 1.0f,0.0f,  0.5f, 0.5f,-0.5f, 1.0f,1.0f,
      0.5f, 0.5f,-0.5f, 1.0f,1.0f, -0.5f, 0.5f,-0.5f, 0.0f,1.0f, -0.5f,-0.5f,-0.5f, 0.0f,0.0f,
@@ -119,8 +119,7 @@ int main() {
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glEnable(GL_DEPTH_TEST);
-    // glPolygonOffset lets us draw coplanar surfaces without z-fighting.
-    // We enable it globally and toggle the actual offset per draw call.
+
     glEnable(GL_POLYGON_OFFSET_FILL);
     glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
 
@@ -172,11 +171,7 @@ int main() {
     auto tint = [&](float r, float g, float b) { glUniform3f(uTint, r, g, b); };
     auto road = [&](bool v) { glUniform1i(uRoad, v ? 1 : 0); };
 
-    // Road dimensions
-    // Straights run between the inner corner edges:
-    //   horizontal (Z=±6): X from -5 to +5  → length 10
-    //   vertical   (X=±6): Z from -5 to +5  → length 10
-    // Corners are 2×2 squares at (±6, ±6).
+ 
     const float Y0 = 0.05f;   // ground-layer road Y
     const float SW = 2.0f;    // road width
     const float SL = 10.0f;   // straight length
@@ -196,18 +191,14 @@ int main() {
         road(false);
         tint(1, 1, 1);
 
-        // --------------------------------------------------
-        // GROUND
-        // --------------------------------------------------
-        // No offset needed — nothing is drawn below it
+   
         glPolygonOffset(0.0f, 0.0f);
         glBindTexture(GL_TEXTURE_2D, grassTex);
         draw(glm::scale(glm::mat4(1.0f), glm::vec3(30.0f, 0.1f, 30.0f)));
 
-        // --------------------------------------------------
-        // ROAD STRAIGHTS  (layer 1 — slight offset so they
-        //                  sit cleanly above the grass)
-        // --------------------------------------------------
+        // ----------------
+        // ROAD STRAIGHTS 
+        // ----------------
         glPolygonOffset(-1.0f, -1.0f);   // pull toward camera
         glBindTexture(GL_TEXTURE_2D, roadTex);
         road(true);
@@ -238,14 +229,12 @@ int main() {
             draw(m);
         }
 
-        // --------------------------------------------------
-        // ROAD CORNERS  (layer 2 — stronger offset so they
-        //                always win over the straights)
-        // Plain road texture, no markings.
-        // --------------------------------------------------
+        // ---------------
+        // ROAD CORNERS  
+        // --------------
         glPolygonOffset(-2.0f, -2.0f);   // pulled even further
         road(false);
-        // corner centres at (±6, ±6), same Y as straights
+
         glm::vec2 cpos[4] = { {-6,6},{6,6},{-6,-6},{6,-6} };
         for (auto& c : cpos)
             draw(glm::scale(
